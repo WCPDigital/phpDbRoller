@@ -11,11 +11,10 @@ namespace{
 	use \DbRoller\Rollers\XmlRoller;
 	
 	try{
-		$host = 'localhost';
-		$host = 'plesk6.au.syrahost.com:1433';
-		$database = 'foundy_foundryCMS';
-		$username = 'foundy_webusr';
-		$password = 'Sup3rcod3r';
+		$host = '';
+		$database = '';
+		$username = '';
+		$password = '';
 		
 		// MySQL: Connect to DB and Execute
 		//$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
