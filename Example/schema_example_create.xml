@@ -1,0 +1,173 @@
+<?xml version='1.0'?>
+<Schema>
+	<Table>
+		<Name>Accounts</Name>
+		<Engine>InnoDB</Engine>
+		<CharSet>utf8</CharSet>
+		<Collation>utf8_unicode_ci</Collation>
+		<AutoIncrement>1</AutoIncrement>
+		<Comment>Registered members.</Comment>
+		<Columns>
+			<Col>
+				<Name>ID</Name>
+				<Type>BIGINT</Type>
+				<LenVal></LenVal>
+				<Default>null</Default>
+				<Attribute>unsigned</Attribute>
+				<AllowNull>false</AllowNull>
+				<Index>PRIMARY</Index>
+				<AutoIncrement>true</AutoIncrement>
+				<Comment>This is the ID.</Comment>
+			</Col>
+			<Col>
+				<Name>UUID</Name>
+				<Type>CHAR</Type>
+				<LenVal>36</LenVal>
+				<Default>null</Default>
+				<Attribute></Attribute>
+				<AllowNull>true</AllowNull>
+				<Index>UNIQUE</Index>
+				<AutoIncrement>false</AutoIncrement>
+				<Comment>This is the UUID/GUID.</Comment>
+			</Col>
+			<Col>
+				<Name>Username</Name>
+				<Type>VARCHAR</Type>
+				<LenVal>100</LenVal>
+				<Default></Default>
+				<Attribute></Attribute>
+				<AllowNull>false</AllowNull>
+				<Index>UNIQUE</Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Username.</Comment>
+			</Col>
+			<Col>
+				<Name>Email</Name>
+				<Type>VARCHAR</Type>
+				<LenVal>200</LenVal>
+				<Default></Default>
+				<Attribute></Attribute>
+				<AllowNull>false</AllowNull>
+				<Index>UNIQUE</Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Email.</Comment>
+			</Col>
+			<Col>
+				<Name>Password</Name>
+				<Type>VARCHAR</Type>
+				<LenVal>100</LenVal>
+				<Default></Default>
+				<Attribute></Attribute>
+				<AllowNull>true</AllowNull>
+				<Index></Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Password.</Comment>
+			</Col>
+			<Col>
+				<Name>DateCreated</Name>
+				<Type>TIMESTAMP</Type>
+				<LenVal></LenVal>
+				<Default>CURRENT_TIMESTAMP</Default>
+				<Attribute></Attribute>
+				<AllowNull>true</AllowNull>
+				<Index></Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Date Created.</Comment>
+			</Col>
+		</Columns>
+		<Insert>
+			<Row>
+				<ID>1</ID>
+				<UUID>{uuid()}</UUID>
+				<Username>admin</Username>
+				<Email>admin@domain.com</Email>
+			</Row>
+		</Insert>
+	</Table>
+	
+	
+	<Table>
+		<Name>AccountRoles</Name>
+		<Engine>InnoDB</Engine>
+		<CharSet>utf8</CharSet>
+		<Collation>utf8_unicode_ci</Collation>
+		<AutoIncrement>1</AutoIncrement>
+		<Comment>Registered members.</Comment>
+		<Columns>
+			<Col>
+				<Name>ID</Name>
+				<Type>BIGINT</Type>
+				<LenVal></LenVal>
+				<Default>null</Default>
+				<Attribute>unsigned</Attribute>
+				<AllowNull>false</AllowNull>
+				<Index>PRIMARY</Index>
+				<AutoIncrement>true</AutoIncrement>
+				<Comment>This is the ID.</Comment>
+			</Col>
+			<Col>
+				<Name>UUID</Name>
+				<Type>CHAR</Type>
+				<LenVal>36</LenVal>
+				<Default>null</Default>
+				<Attribute></Attribute>
+				<AllowNull>true</AllowNull>
+				<Index>UNIQUE</Index>
+				<AutoIncrement>false</AutoIncrement>
+				<Comment>This is the UUID/GUID.</Comment>
+			</Col>
+			<Col>
+				<Name>Username</Name>
+				<Type>VARCHAR</Type>
+				<LenVal>100</LenVal>
+				<Default></Default>
+				<Attribute></Attribute>
+				<AllowNull>false</AllowNull>
+				<Index>UNIQUE</Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Username.</Comment>
+			</Col>
+			<Col>
+				<Name>Email</Name>
+				<Type>VARCHAR</Type>
+				<LenVal>200</LenVal>
+				<Default></Default>
+				<Attribute></Attribute>
+				<AllowNull>false</AllowNull>
+				<Index>UNIQUE</Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Email.</Comment>
+			</Col>
+			<Col>
+				<Name>Password</Name>
+				<Type>VARCHAR</Type>
+				<LenVal>100</LenVal>
+				<Default></Default>
+				<Attribute></Attribute>
+				<AllowNull>true</AllowNull>
+				<Index></Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Password.</Comment>
+			</Col>
+			<Col>
+				<Name>DateCreated</Name>
+				<Type>TIMESTAMP</Type>
+				<LenVal></LenVal>
+				<Default>CURRENT_TIMESTAMP</Default>
+				<Attribute></Attribute>
+				<AllowNull>true</AllowNull>
+				<Index></Index>
+				<AutoIncrement></AutoIncrement>
+				<Comment>This is the Date Created.</Comment>
+			</Col>
+		</Columns>
+		<Insert>
+			<Row>
+				<ID>1</ID>
+				<UUID>{uuid()}</UUID>
+				<Username>admin</Username>
+				<Email>admin@domain.com</Email>
+			</Row>
+		</Insert>
+	</Table>
+</Schema>

@@ -14,15 +14,15 @@ namespace DbRoller\Rollers
 		public function BuildFromFile( $filePath, $execute = true, $rebuild = false  );		
 		
 		/**
-		* Build from Object.
+		* Build from Array.
 		* Use data to Create and Execute SQL.
 		*
-		* @param object $data.
+		* @param array $data.
 		* @param bool $execute.
 		*
 		* @return string.
 		*/		
-		public function Build( $data, $execute = true, $rebuild = false  );
+		public function Build( Array $data, $execute = true, $rebuild = false  );
 		
 		/**
 		* Seed Table (SQL Insert).
