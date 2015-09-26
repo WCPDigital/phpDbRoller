@@ -9,6 +9,7 @@ namespace{
 	use \DbRoller\Translators\SQLiteTranslator;
 	use \DbRoller\Rollers\JsonRoller;
 	use \DbRoller\Rollers\XmlRoller;
+	use \DbRoller\Rollers\YamlRoller;
 	
 	try{
 		$host = '';
@@ -17,10 +18,10 @@ namespace{
 		$password = '';
 		
 		// MySQL: Connect to DB and Execute
-		//$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
+		$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 		
 		// MS SQL; Connect to DB and Execute
-		$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
+		//$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 
 		// SQLite; Connect to DB and Execute	
 		//$db = new PDO('sqlite:data/example.sqlite3');
@@ -36,8 +37,8 @@ namespace{
 	}
 	
 	// Create a translator
-	//$trans = new MySQLTranslator();
-	$trans = new MSSQLTranslator();
+	$trans = new MySQLTranslator();
+	//$trans = new MSSQLTranslator();
 	//$trans = new SQLiteTranslator();
 
 	
@@ -56,15 +57,31 @@ namespace{
 	
 	// XML
 	// Create a builder
-	$builder = new XmlRoller( $db, $trans );
+	//$builder = new XmlRoller( $db, $trans );
 	
 	// Build the Schema and update the Database
-	$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.xml', true, true );
-	echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.xml', true, true );
+	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
 	
 	// Build the Schema and update the Database
 	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.xml', true, false );
 	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	
+	
+	
+	
+	// YAML
+	// Create a builder
+	$builder = new YamlRoller( $db, $trans );
+	
+	// Build the Schema and update the Database
+	$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.yaml', true, true );
+	echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	
+	// Build the Schema and update the Database
+	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.yaml', true, false );
+	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	
 	
 	
 	// Test to see if the Table (and Columns) exist in the Database
