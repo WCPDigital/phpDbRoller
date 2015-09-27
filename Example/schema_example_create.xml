@@ -1,12 +1,18 @@
 <?xml version='1.0'?>
 <Schema>
+
+	<!-- Accounts Table -->
 	<Table>
+	
+		<!-- Table Parameters -->
 		<Name>Accounts</Name>
 		<Engine>InnoDB</Engine>
 		<CharSet>utf8</CharSet>
 		<Collation>utf8_unicode_ci</Collation>
 		<AutoIncrement>1</AutoIncrement>
 		<Comment>Registered members.</Comment>
+		
+		<!-- Table Columns Array -->
 		<Columns>
 			<Col>
 				<Name>ID</Name>
@@ -75,6 +81,8 @@
 				<Comment>This is the Date Created.</Comment>
 			</Col>
 		</Columns>
+		
+		<!-- Table Insert Array -->
 		<Insert>
 			<Row>
 				<ID>1</ID>
@@ -84,15 +92,20 @@
 			</Row>
 		</Insert>
 	</Table>
-	
-	
+
+
+	<!-- Roles Table -->
 	<Table>
+	
+		<!-- Table Parameters -->
 		<Name>AccountRoles</Name>
 		<Engine>InnoDB</Engine>
 		<CharSet>utf8</CharSet>
 		<Collation>utf8_unicode_ci</Collation>
 		<AutoIncrement>1</AutoIncrement>
 		<Comment>Registered members.</Comment>
+		
+		<!-- Table Columns Array -->
 		<Columns>
 			<Col>
 				<Name>ID</Name>
@@ -161,6 +174,8 @@
 				<Comment>This is the Date Created.</Comment>
 			</Col>
 		</Columns>
+		
+		<!-- Table Insert Array -->
 		<Insert>
 			<Row>
 				<ID>1</ID>
@@ -170,4 +185,5 @@
 			</Row>
 		</Insert>
 	</Table>
+
 </Schema>

@@ -115,7 +115,8 @@ namespace DbRoller\Translators
 				$sql .= " NOT NULL ";
 		
 			// Add Default
-			if( !empty( $args['Default'] ) ){
+			// Note: Disregard Defaults for Autoincrement
+			if( !empty( $args['Default'] ) && !$args['AutoIncrement'] ){
 				
 				// Translate the Default
 				$default = $this->Translate( $args['Default'] );

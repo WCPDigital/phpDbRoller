@@ -47,7 +47,7 @@ namespace DbRoller\Rollers
 					'Engine'=>(string)$tbl->Engine,
 					'CharSet'=>(string)$tbl->CharSet,
 					'Collation'=>(string)$tbl->Collation,
-					'AutoIncrement'=>(string)$tbl->AutoIncrement,
+					'AutoIncrement'=>$this->parseType( (string)$tbl->AutoIncrement ),
 					'Comment'=>(string)$tbl->Comment,
 					'Columns'=>array(),
 					'Insert'=>array()
@@ -58,7 +58,7 @@ namespace DbRoller\Rollers
 					
 					$params = array();
 					foreach( $col as $param ){
-						$params[$param->getName()] = trim((string)$param);
+						$params[$param->getName()] = $this->parseType( trim((string)$param) );
 					}
 					$tables[$i]['Columns'][] = $params;
 				}
@@ -67,7 +67,7 @@ namespace DbRoller\Rollers
 				foreach( $tbl->Insert->Row as $row ){
 					$cols = array();
 					foreach( $row as $col ){
-						$cols[$col->getName()] = trim((string)$col);
+						$cols[$col->getName()] = $this->parseType( trim((string)$param) );
 					}
 					$tables[$i]['Insert'][] = $cols;
 				}
@@ -81,5 +81,22 @@ namespace DbRoller\Rollers
 			return $this->build( $tables, $execute, $rebuild );
 		}
 		
+		protected function parseType( $str ){
+			
+			// Is boolean
+			if( strtolower($str) === 'true' )
+				return true;
+			
+			// Is boolean
+			if( strtolower($str) === 'false' )
+				return false;
+			
+			// Is Number
+			//if( is_numeric($str) )
+				//return $str;
+			
+			// Is string (PHP will figure it out)
+			return $str;
+		}
 	} 
 }

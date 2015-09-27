@@ -1,6 +1,6 @@
 <?php
 namespace{
-
+	
 	//require_once('../DbRoller/bootstrap.php');
 	require_once('../DbRoller/autoload.php');
 	
@@ -12,16 +12,16 @@ namespace{
 	use \DbRoller\Rollers\YamlRoller;
 	
 	try{
-		$host = '';
+		$host = 'localhost';
 		$database = '';
 		$username = '';
 		$password = '';
 		
 		// MySQL: Connect to DB and Execute
-		$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
+		//$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 		
 		// MS SQL; Connect to DB and Execute
-		//$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
+		$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 
 		// SQLite; Connect to DB and Execute	
 		//$db = new PDO('sqlite:data/example.sqlite3');
@@ -36,36 +36,40 @@ namespace{
 		throw new Exception('DB Builder (Schema): '. $ex->getMessage() );
 	}
 	
+	
+	try{
+	
 	// Create a translator
-	$trans = new MySQLTranslator();
-	//$trans = new MSSQLTranslator();
+	//$trans = new MySQLTranslator();
+	$trans = new MSSQLTranslator();
 	//$trans = new SQLiteTranslator();
 
 	
 	// JSON
 	// Create a builder
-	//$builder = new JsonRoller( $db, $trans );
+	$builder = new JsonRoller( $db, $trans );
 	
 	// Build the Schema and update the Database
-	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.json', true, true );
-	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.json', true, true );
+	echo '<h2>JSON Create</h2><div style="margin:20px 0;">'.$sql.'</div>';
 	
 	// Build the Schema and update the Database
-	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.json', true, false );
-	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.json', true, false );
+	echo '<h2>JSON Alter</h2><div style="margin:20px 0;">'.$sql.'</div>';
+	
 	
 	
 	// XML
 	// Create a builder
-	//$builder = new XmlRoller( $db, $trans );
+	$builder = new XmlRoller( $db, $trans );
 	
 	// Build the Schema and update the Database
-	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.xml', true, true );
-	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.xml', true, true );
+	echo '<h2>XML Create</h2><div style="margin:20px 0;">'.$sql.'</div>';
 	
 	// Build the Schema and update the Database
 	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.xml', true, false );
-	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	//echo '<h2>XML Alter</h2><div style="margin:20px 0;">'.$sql.'</div>';
 	
 	
 	
@@ -76,13 +80,17 @@ namespace{
 	
 	// Build the Schema and update the Database
 	$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_create.yaml', true, true );
-	echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	echo '<h2>YAML Create</h2><div style="margin:20px 0;">'.$sql.'</div>';
 	
 	// Build the Schema and update the Database
 	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.yaml', true, false );
-	//echo '<div style="margin:20px 0;">'.$sql.'</div>';
+	//echo '<h2>YAML ALter</h2><div style="margin:20px 0;">'.$sql.'</div>';
 	
-	
+	}
+	catch( Exception $ex ){
+		
+		die( $ex->getMessage() );
+	}
 	
 	// Test to see if the Table (and Columns) exist in the Database
 	$sql = "SELECT * FROM Accounts WHERE 1=1 ";

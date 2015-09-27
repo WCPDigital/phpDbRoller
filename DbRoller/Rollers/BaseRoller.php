@@ -105,7 +105,7 @@ namespace DbRoller\Rollers
 				catch( PDOException $ex ) {
 					
 					// Rethrow to Higher level
-					throw new Exception('DB Roller (Schema): '. $ex->getMessage() );
+					throw new Exception('DB Roller (Schema): '. $ex->getMessage() . ' SQL: ' . $sql );
 				}
 				
 				// Table Create or Modify flag
@@ -175,7 +175,7 @@ namespace DbRoller\Rollers
 					// Test for Column Allow NULLs
 					// Note: Maybe a string, so it needs checking
 					if( !empty( $col['AllowNull'] ) )
-						$colAllowNull = strtolower($col['AllowNull']) === 'true' ? true : false;
+						$colAllowNull = $col['AllowNull'];
 
 					// Test for Column Default
 					if( !empty( $col['Default'] ) )
@@ -189,7 +189,7 @@ namespace DbRoller\Rollers
 					// Test for Column Auto Increment
 					// Note: Maybe a string, so it needs checking
 					if( !empty( $col['AutoIncrement'] ) )
-						$colAutoIncrement = strtolower($col['AutoIncrement']) === 'true' ? true : false;
+						$colAutoIncrement = $col['AutoIncrement'];
 					
 					// Test for Column Comment
 					if( !empty( $col['Comment'] ) )
@@ -204,8 +204,6 @@ namespace DbRoller\Rollers
 							case self::PRIMARY_KEY:
 								$PKeys[] = $colName;
 								
-								// Mark as an Index/Key
-								$isKey = true;
 								break;
 								
 							case self::UNIQUE_KEY:
@@ -217,7 +215,9 @@ namespace DbRoller\Rollers
 								$Keys[] = $colName;
 								break;
 						}
-						
+				
+						// Mark as an Index/Key
+						$isKey = true;
 					}
 					
 					// Add Final Values to Array
@@ -278,7 +278,7 @@ namespace DbRoller\Rollers
 							$this->conn->rollBack();
 							
 							// Rethrow to Higher level
-							throw new Exception('DB Roller (Schema): '. $ex->getMessage() );
+							throw new Exception('DB Roller (Schema): '. $ex->getMessage() . ' SQL: ' . $sql );
 						}
 					}
 					
@@ -297,8 +297,6 @@ namespace DbRoller\Rollers
 						'Collation'=>$tableCollation,
 						'AutoIncrement'=>$tableAutoIncrement
 					) );
-					
-					echo $sql;
 
 					// Create the Table
 					// Note: If the SQL is empty, then there are no changes
@@ -312,7 +310,7 @@ namespace DbRoller\Rollers
 							$this->conn->rollBack();
 							
 							// Rethrow to Higher level
-							throw new Exception('DB Roller (Schema): '. $ex->getMessage() );
+							throw new Exception('DB Roller (Schema): '. $ex->getMessage() . '\n\n' . $sql );
 						}
 					}
 
@@ -402,7 +400,7 @@ namespace DbRoller\Rollers
 				$this->conn->rollBack();
 				
 				// Rethrow to Higher level
-				throw new Exception('DB Roller (Schema): '. $ex->getMessage() );
+				throw new Exception('DB Roller (Schema): '. $ex->getMessage() . ' SQL: ' . $sql );
 			}
 			
 			// Return the complete Build Script

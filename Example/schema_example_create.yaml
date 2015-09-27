@@ -1,10 +1,22 @@
+#
+# DB Roller YAML Schema example
+#
+# author: [Patrick Purcell]
+# website: [http://www.dbroller.com, http://www.wcpdigital.com.au]
+# license: [MIT License, http://www.opensource.org/licenses/mit-license.php]
+# copyright: (c) 2015-2016 Patrick Purcell
+
 ---
+
+# Accounts Table Paramaters
 - Name: Accounts
   Engine: InnoDB
   CharSet: utf8
   Collation: utf8_unicode_ci
   AutoIncrement: 1
   Comment: Registered members.
+
+#Columns Array
   Columns:
   - Name: ID
     Type: BIGINT
@@ -52,17 +64,23 @@
     Default: CURRENT_TIMESTAMP
     AllowNull: true
     Comment: This is the Date Created.
+
+# Insert Array
   Insert:
   - ID: 1
     UUID: '{uuid()}'
     Username: admin
     Email: admin@domain.com
+
+# Roles Table Parameters
 - Name: Roles
   Engine: InnoDB
   CharSet: utf8
   Collation: utf8_unicode_ci
   AutoIncrement: 1
   Comment: Roles for account permission assignment.
+  
+# Columns Array
   Columns:
   - Name: ID
     Type: INT
@@ -86,6 +104,8 @@
     Default: ""
     AllowNull: false
     Comment: This is the Email.
+
+# Insert Array
   Insert:
   - ID: 1
     Name: Administrator
@@ -93,12 +113,16 @@
   - ID: 2
     Name: Member
     Comment: Role assigned to ordinary users.
+
+# Account Roles Table Parameters
 - Name: AccountRoles
   Engine: InnoDB
   CharSet: utf8
   Collation: utf8_unicode_ci
   AutoIncrement: 1
   Comment: Roles assigned to accounts.
+  
+# Columns Array
   Columns:
   - Name: AccountID
     Type: BIGINT
@@ -112,6 +136,8 @@
     AllowNull: false
     Index: PRIMARY
     Comment: This is the RoleID.
+
+# Insert Array
   Insert:
   - AccountID: 1
     RoleID: 1
