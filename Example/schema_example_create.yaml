@@ -67,8 +67,7 @@
 
 # Insert Array
   Insert:
-  - ID: 1
-    UUID: '{uuid()}'
+  - UUID: '{uuid()}'
     Username: admin
     Email: admin@domain.com
 
@@ -107,11 +106,9 @@
 
 # Insert Array
   Insert:
-  - ID: 1
-    Name: Administrator
+  - Name: Administrator
     Comment: Role reserved for super users.
-  - ID: 2
-    Name: Member
+  - Name: Member
     Comment: Role assigned to ordinary users.
 
 # Account Roles Table Parameters
@@ -129,7 +126,6 @@
     Attribute: unsigned
     AllowNull: false
     Index: PRIMARY
-    AutoIncrement: true
     Comment: This is the AccountID.
   - Name: RoleID
     Type: INT

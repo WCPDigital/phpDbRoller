@@ -68,7 +68,6 @@
 		],
 		"Insert":[
 			{
-				"ID":1,
 				"UUID":"{uuid()}",
 				"Username":"admin",
 				"Email":"admin@domain.com"
@@ -114,12 +113,10 @@
 		],
 		"Insert":[
 			{
-				"ID":1,
 				"Name":"Administrator",
 				"Comment":"Role reserved for super users."
 			},
 			{
-				"ID":2,
 				"Name":"Member",
 				"Comment":"Role assigned to ordinary users."
 			}
@@ -139,7 +136,6 @@
 				"Attribute":"unsigned",
 				"AllowNull":false,
 				"Index":"PRIMARY",
-				"AutoIncrement":true,
 				"Comment":"This is the AccountID."
 			},
 			{

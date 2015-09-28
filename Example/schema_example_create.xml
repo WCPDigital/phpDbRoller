@@ -85,7 +85,6 @@
 		<!-- Table Insert Array -->
 		<Insert>
 			<Row>
-				<ID>1</ID>
 				<UUID>{uuid()}</UUID>
 				<Username>admin</Username>
 				<Email>admin@domain.com</Email>
@@ -178,7 +177,6 @@
 		<!-- Table Insert Array -->
 		<Insert>
 			<Row>
-				<ID>1</ID>
 				<UUID>{uuid()}</UUID>
 				<Username>admin</Username>
 				<Email>admin@domain.com</Email>

@@ -19,10 +19,10 @@ namespace{
 		$password = '';
 		
 		// MySQL: Connect to DB and Execute
-		//$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
+		$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 		
 		// PostGreSQL: Connect to DB and Execute
-		$db = new PDO('pgsql:host='.$host.';dbname='.$database.';', $username, $password );
+		//$db = new PDO('pgsql:host='.$host.';dbname='.$database.';', $username, $password );
 		
 		// MS SQL; Connect to DB and Execute
 		//$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
@@ -59,9 +59,8 @@ namespace{
 	echo '<h2>JSON Create</h2><div style="margin:20px 0;">'.$sql.'</div>';
 	
 	// Build the Schema and update the Database
-	$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.json', true, false );
-	echo '<h2>JSON Alter</h2><div style="margin:20px 0;">'.$sql.'</div>';
-	
+	//$sql = $builder->BuildFromFile( __DIR__ . DIRECTORY_SEPARATOR . 'schema_example_alter.json', true, false );
+	//echo '<h2>JSON Alter</h2><div style="margin:20px 0;">'.$sql.'</div>';
 	
 	
 	// XML
@@ -98,7 +97,7 @@ namespace{
 	}
 	
 	// Test to see if the Table (and Columns) exist in the Database
-	$sql = "SELECT * FROM Accounts WHERE 1=1 ";
+	$sql = "SELECT * FROM ". $trans->SafeEnclose('Accounts') . " WHERE 1=1 ";
 	
 	// Query the Table
 	$rows = null;

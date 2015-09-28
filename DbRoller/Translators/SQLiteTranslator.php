@@ -6,6 +6,19 @@ namespace DbRoller\Translators
 	class SQLiteTranslator extends BaseTranslator implements IDbTranslator
 	{
 		/**
+		* Safe Enclose.
+		* Enclose (wrap) Table or Column names to differenciate from Reserved words.
+		*
+		* @param string $value.
+		*
+		* @return string.
+		*/
+		public function SafeEnclose( $value ){
+			return '`'.$value.'`';
+
+		}		
+	
+		/**
 		* Table Schema.
 		* Return a query for accessing the table's schema
 		*
@@ -39,26 +52,26 @@ namespace DbRoller\Translators
 		* Is Function
 		* Check to see if the string is a DB Function
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return null|string.
 		*/
-		public function IsFunction( $dbFunction, $dbVendor = self::SQLITE ){
-			return parent::IsFunction( $dbFunction, $dbVendor );
+		public function IsFunction( $dbKeyword, $dbVendor = self::SQLITE ){
+			return parent::IsFunction( $dbKeyword, $dbVendor );
 		}		
 		
 		/**
 		* Translate.
 		* Load csv file containing the Database translation information.
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return string.
 		*/
-		public function Translate( $dbFunction, $dbVendor = self::SQLITE ){
-			return parent::Translate( $dbFunction, $dbVendor );
+		public function Translate( $dbKeyword, $dbVendor = self::SQLITE ){
+			return parent::Translate( $dbKeyword, $dbVendor );
 		}
 
 		
@@ -76,16 +89,16 @@ namespace DbRoller\Translators
 				throw new Exception('Name and Type are required fields.');
 
 			// Add Name
-			$sql = " `".$args['Name']."` ";
+			$sql = " ".$this->SafeEnclose( $args['Name'] )." ";
 			
-			// Add Type
+			// Translate Type
 			$type = $this->Translate( $args['Type'] );
 			if( !empty( $type ) ){
-				$sql .= " ".$type." ";
+				$args['Type'] = $type;
 			}
-			else{
-				$sql .= " ".$args['Type']." ";
-			}
+
+			// Add Type
+			$sql .= " ".$args['Type']." ";
 			
 			// Add Type Length/Values
 			if( !empty( $args['Index'] ) ) {
@@ -97,8 +110,14 @@ namespace DbRoller\Translators
 				}
 			}
 			
+			// Add Auto Increment
+			// In SQLite this is automatically added to every column using the ROWID
+			//if( $args['AutoIncrement'] ) 
+				//$sql .= " AUTOINCREMENT ";		
+
 			// Allow Nulls
-			if( $args['AllowNull'] && !$args['AutoIncrement'] )
+			// In SQLite Autoincrement Columns must be NULL
+			if( $args['AllowNull'] || $args['AutoIncrement'] )
 				$sql .= " NULL ";
 			else
 				$sql .= " NOT NULL ";
@@ -132,7 +151,7 @@ namespace DbRoller\Translators
 		* @return null|string.
 		*/		
 		public function WriteInsert( $tableName, Array $cols, Array $params ){
-			return " INSERT INTO `" . $tableName . "` (" . implode( ",", $cols ) . ") VALUES (" . implode( ",", $params ) . "); ";
+			return " INSERT INTO " . $this->SafeEnclose( $tableName ) . " (" . implode( ",", array_map( array($this,'SafeEnclose'), $cols ) ) . ") VALUES (" . implode( ",", $params ) . "); ";
 		}
 		
 		/**
@@ -151,10 +170,10 @@ namespace DbRoller\Translators
 		public function Create( $tableName, Array $cols, Array $pkeys, Array $ukeys, Array $keys, Array $args = null    ){
 
 			// Add a Drop if Exists Query
-			$sql = " DROP TABLE IF EXISTS `". $tableName ."`; ";
+			$sql = " DROP TABLE IF EXISTS ". $this->SafeEnclose( $tableName ) ."; ";
 			
 			// Start the Create Table Query
-			$sql .= " CREATE TABLE IF NOT EXISTS `". $tableName ."` (";
+			$sql .= " CREATE TABLE IF NOT EXISTS ". $this->SafeEnclose( $tableName ) ." (";
 			
 			// Create Column SQL
 			$numOfCols = count( $cols );
@@ -174,7 +193,7 @@ namespace DbRoller\Translators
 			$numOf = count($pkeys);
 			if( $numOf > 0 ){
 				
-				$sql .= ", CONSTRAINT `".$this->NameConstraint($tableName, 'X', self::PK)."` PRIMARY KEY  ( ";
+				$sql .= ", CONSTRAINT ". $this->SafeEnclose(  $this->NameConstraint($tableName, 'X', self::PK) ) ." PRIMARY KEY  ( ";
 				for( $i=0; $i<$numOf; $i++ ){
 					$sql .= "`".$pkeys[$i]."`";
 					
@@ -192,7 +211,7 @@ namespace DbRoller\Translators
 			$numOf = count($keys);
 			if( $numOf > 0 ){
 				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX `".$this->NameConstraint($tableName, $key,self::IDX)."` ON `".$tableName."`(`".$key."`); ";			
+					$sql .= " CREATE INDEX ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::IDX) )." ON ".$this->SafeEnclose( $tableName ) ." (".$this->SafeEnclose( $key )." ); ";			
 				}
 			}
 			
@@ -231,7 +250,7 @@ namespace DbRoller\Translators
 					continue;
 				
 				// Add or Modify
-				$sql .= " ALTER TABLE `". $tableName ."` ADD " . $this->WriteColumn( $col ) . "; ";
+				$sql .= " ALTER TABLE ". $this->SafeEnclose( $tableName ) ." ADD " . $this->WriteColumn( $col ) . "; ";
 
 				// Increment the Change Counter
 				$changeCounter++;
@@ -247,7 +266,7 @@ namespace DbRoller\Translators
 			$numOf = count($keys);
 			if( $numOf > 0 ){
 				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX `".$this->NameConstraint($tableName, $key,self::IDX)."` ON `".$tableName."`(`".$key."`); ";			
+					$sql .= " CREATE INDEX ". $this->SafeEnclose( $this->NameConstraint($tableName, $key,self::IDX) )." ON ". $this->SafeEnclose( $tableName ). " ( ".$this->SafeEnclose( $key ) ." ); ";			
 				}
 			}
 

@@ -75,15 +75,15 @@ namespace DbRoller\Translators
 		* Translate.
 		* Load csv file containing the Database translation information.
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return string.
 		*/
-		public function Translate( $dbFunction, $dbVendor = self::MYSQL ){
+		public function Translate( $dbKeyword, $dbVendor = self::MYSQL ){
 			
 			// Convert strings to Uppercase
-			$dbFunction = strtoupper( $dbFunction );
+			$dbKeyword = strtoupper( $dbKeyword );
 			$dbVendor = strtoupper( $dbVendor );
 			
 			// Lazy load the Translation Matrix
@@ -101,13 +101,28 @@ namespace DbRoller\Translators
 					}
 				}
 			}
-
+			
+			// Check the Vendor Column, see if it's a valid keyword
+			// Vertical Value
+			$fIndex = -1;
+			foreach( $this->matrix as $idx => $row ){
+				
+				// Key/Value exists
+				if( isset( $this->matrix[ $idx ][ $vIndex ] ) ){
+					
+					// Match found, return the keyword
+					if( $this->matrix[ $idx ][ $vIndex ] == $dbKeyword )
+						return $this->matrix[ $idx ][ $vIndex ]; 
+				}
+			}
+			
+			// Vendor match not found, look for the translation
 			// Find the Index of the Function
 			// Vertical Value
 			$fIndex = -1;
 			foreach( $this->matrix as $idx => $row ){
 				foreach( $row as $val ){
-					if( $val == $dbFunction ){
+					if( $val == $dbKeyword ){
 						$fIndex = $idx;
 						break;
 					}
@@ -127,21 +142,21 @@ namespace DbRoller\Translators
 		* Is Function
 		* Check to see if the string is a DB Function
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return null|string.
 		*/
-		public function IsFunction( $dbFunction, $dbVendor ){
-			$dbFunction = trim( $dbFunction );
+		public function IsFunction( $dbKeyword, $dbVendor ){
+			$dbKeyword = trim( $dbKeyword );
 			
 			// String is too short. Can't be a function
-			if( strlen( $dbFunction ) < 1 )
+			if( strlen( $dbKeyword ) < 1 )
 				return null;
 			
 			// Is Function
-			if( substr($dbFunction, 0, 1) === '{' && substr( $dbFunction, -1, 1 ) === '}' ){
-				$func = substr($dbFunction, 1, -1);	
+			if( substr($dbKeyword, 0, 1) === '{' && substr( $dbKeyword, -1, 1 ) === '}' ){
+				$func = substr($dbKeyword, 1, -1);	
 				
 				// Lookup in the Translation Matrix
 				return $this->Translate( $func, $dbVendor );

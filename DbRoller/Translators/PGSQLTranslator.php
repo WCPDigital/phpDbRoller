@@ -10,9 +10,22 @@ namespace DbRoller\Translators
 		const PGSQL_COLLATION = 'utf8_general_ci';
 		const PGSQL_AUTOINCREMENT = 1;
 
-		const PGSQL_BINARY = 'BINARY';
-		const PGSQL_UNSIGNED = 'UNSIGNED';
-		const PGSQL_UNSIGNED_ZEROFILL = 'UNSIGNED ZEROFILL';
+		const PGSQL_SERIAL = 'SERIAL';
+		const PGSQL_BIGSERIAL = 'BIGSERIAL';
+	
+	
+		/**
+		* Safe Enclose.
+		* Enclose (wrap) Table or Column names to differenciate from Reserved words.
+		*
+		* @param string $value.
+		*
+		* @return string.
+		*/
+		public function SafeEnclose( $value ){
+			return '"'.$value.'"';
+
+		}		
 	
 		/**
 		* Table Exists.
@@ -47,26 +60,26 @@ namespace DbRoller\Translators
 		* Is Function
 		* Check to see if the string is a DB Function
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return null|string.
 		*/
-		public function IsFunction( $dbFunction, $dbVendor = self::PGSQL ){
-			return parent::IsFunction( $dbFunction, $dbVendor );
+		public function IsFunction( $dbKeyword, $dbVendor = self::PGSQL ){
+			return parent::IsFunction( $dbKeyword, $dbVendor );
 		}
 		
 		/**
 		* Translate.
 		* Load csv file containing the Database translation information.
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return string.
 		*/
-		public function Translate( $dbFunction, $dbVendor = self::PGSQL ){
-			return parent::Translate( $dbFunction, $dbVendor );
+		public function Translate( $dbKeyword, $dbVendor = self::PGSQL ){
+			return parent::Translate( $dbKeyword, $dbVendor );
 		}
 
 		
@@ -84,30 +97,43 @@ namespace DbRoller\Translators
 				throw new Exception('Name and Type are required fields.');
 
 			// Add Name
-			$sql = " `".$args['Name']."` ";
+			$sql = " ".$this->SafeEnclose( $args['Name'] )." ";
+			
+			
+			// PostGres AutoIncrement is handled by the Serial Datatype
+			// Convert INT and BIGINT to SERIAL and BIGSERIAL when flagged as AutoIncrement
+			$args['Type'] = strtoupper($args['Type']);
+			if( $args['AutoIncrement'] ){
+				switch( $args['Type'] ){
+					case 'INT':
+						$args['Type'] = self::PGSQL_SERIAL;
+						break;
+						
+					case 'BIGINT':
+					default:
+						$args['Type'] = self::PGSQL_BIGSERIAL;
+						break;
+				}
+			}
+			 
+			// Ensure the autoincrement flag is set
+			$args['AutoIncrement'] = ( $args['Type'] == self::PGSQL_SERIAL || $args['Type'] == self::PGSQL_BIGSERIAL );
+			
+			// If not AutoIncrement, Translate Type
+			if( !$args['AutoIncrement'] ){
+				$type = $this->Translate( $args['Type'] );
+				if( !empty( $type ) ){
+					$args['Type'] = $type;
+				}
+			}
 			
 			// Add Type
-			$type = $this->Translate( $args['Type'] );
-			if( !empty( $type ) ){
-				$sql .= " ".$type." ";
-			}
-			else{
-				$sql .= " ".$args['Type']." ";
-			}
+			$sql .= " ".$args['Type']." ";
 			
 			// Add Type Length/Values
 			if( !empty( $args['LenVal'] ) ) 
 				$sql .= " (".$args['LenVal'].") ";
 
-			// Add Attribute
-			if( !empty( $args['Attribute'] ) ){
-				
-				// If not a Special Function, wrap in single quotes
-				$args['Attribute'] = strtoupper($args['Attribute']);
-				if( in_array( $args['Attribute'], array( self::PGSQL_BINARY, self::PGSQL_UNSIGNED, self::PGSQL_UNSIGNED_ZEROFILL ) ) )
-					$sql .= " ".$args['Attribute']." ";
-			}
-			
 			// Allow Nulls
 			if( $args['AllowNull'] && !$args['AutoIncrement'] )
 				$sql .= " NULL ";
@@ -129,14 +155,10 @@ namespace DbRoller\Translators
 						$sql .= " DEFAULT '".$args['Default']."' ";
 				}
 			}
-			
-			// Add Auto Increment
-			if( $args['AutoIncrement'] ) 
-				$sql .= " AUTO_INCREMENT ";		
 
 			// Add Comment
-			if( !empty( $args['Comment'] ) ) 
-				$sql .= " COMMENT '".$args['Comment']."' ";
+			//if( !empty( $args['Comment'] ) ) 
+				//$sql .= " COMMENT '".$args['Comment']."' ";
 
 			return $sql;
 		}
@@ -151,7 +173,7 @@ namespace DbRoller\Translators
 		* @return string.
 		*/		
 		public function WriteInsert( $tableName, Array $cols, Array $params ){
-			return " INSERT INTO `" . $tableName . "` (" . implode( ",", $cols ) . ") VALUES (" . implode( ",", $params ) . "); ";
+			return " INSERT INTO " . $this->SafeEnclose( $tableName ) . " (" . implode( ",", array_map( array($this,'SafeEnclose'), $cols ) ) . ") VALUES (" . implode( ",", $params ) . "); ";
 		}
 		
 		/**
@@ -170,10 +192,10 @@ namespace DbRoller\Translators
 		public function Create( $tableName, Array $cols, Array $pkeys, Array $ukeys, Array $keys, Array $args = null    ){
 
 			// Add a Drop if Exists Query
-			$sql = " DROP TABLE IF EXISTS `". $tableName ."`; ";
+			$sql = " DROP TABLE IF EXISTS ". $this->SafeEnclose( $tableName ) ."; ";
 			
 			// Start the Create Table Query
-			$sql .= " CREATE TABLE IF NOT EXISTS `". $tableName ."` (";
+			$sql .= " CREATE TABLE ". $this->SafeEnclose( $tableName ) ." (";
 			
 			// Create Column SQL
 			$numOfCols = count( $cols );
@@ -193,9 +215,9 @@ namespace DbRoller\Translators
 			$numOf = count($pkeys);
 			if( $numOf > 0 ){
 				
-				$sql .= ", PRIMARY KEY `".$this->NameConstraint($tableName, 'X', self::PK)."` ( ";
+				$sql .= ", CONSTRAINT  ". $this->SafeEnclose( $this->NameConstraint($tableName, 'X', self::PK) ) ." PRIMARY KEY ( ";
 				for( $i=0; $i<$numOf; $i++ ){
-					$sql .= " `".$pkeys[$i]."` ";
+					$sql .= " ". $this->SafeEnclose( $pkeys[$i] ) ." ";
 					
 					// Append Col Spacer (comma)
 					if( $i<($numOf-1) )
@@ -208,50 +230,13 @@ namespace DbRoller\Translators
 			$numOf = count($ukeys);
 			if( $numOf > 0 ){
 				foreach( $ukeys as $key ){
-					$sql .= ", UNIQUE KEY `".$this->NameConstraint($tableName, $key,self::UQ)."` (`".$key."`) ";			
+					$sql .= ", CONSTRAINT ". $this->SafeEnclose( $this->NameConstraint($tableName, $key,self::UQ) ) ." UNIQUE (".$this->SafeEnclose( $key ) .") ";			
 				}
 			}	
 			
-			// Add Keys/Indices
-			$numOf = count($keys);
-			if( $numOf > 0 ){
-				foreach( $keys as $key ){
-					$sql .= ", KEY `".$this->NameConstraint($tableName, $key,self::IDX)."` (`".$key."`) ";			
-				}
-			}
-			
 			// Complete the Table Create SQL
-			$sql .= " ) ";
-			
-			// Add engine
-			if( !empty( $args['Engine'] ) )
-				$sql .= " ENGINE='".$args['Engine']."' ";
-			else
-				$sql .= " ENGINE='".self::PGSQL_ENGINE."' ";
-			
-			
-			// Add CharSet
-			if( !empty($args['CharSet']) )
-				$sql .= " DEFAULT CHARSET='".$args['CharSet']."' ";
-			else
-				$sql .= " DEFAULT CHARSET='".self::PGSQL_CHARSET."' ";
-			
-			
-			// Add Collation
-			if( !empty($args['Collation']) )
-				$sql .= " COLLATE='".$args['Collation']."' ";
-			else
-				$sql .= " COLLATE='".self::PGSQL_COLLATION."' ";
-			
-			
-			// Add Auto Increment
-			if( !empty( $args['AutoIncrement'] ) ){
-				$sql .= " AUTO_INCREMENT=".intval( $args['AutoIncrement'] );
-			}
+			$sql .= " ); ";
 
-			// Add Closure
-			$sql .= ";";
-			
 			// Finsihed SQL
 			return $sql;
 		}
@@ -275,7 +260,7 @@ namespace DbRoller\Translators
 			$changeCounter = 0;
 			
 			// Create the Alter Table SQL
-			$sql = " ALTER TABLE `". $tableName ."` ";
+			$sql = " ALTER TABLE ". $this->SafeEnclose( $tableName ) ." ";
 			
 			// Loop Columns and Add or Drop
 			$numOfCols = count( $cols );
@@ -284,7 +269,7 @@ namespace DbRoller\Translators
 				
 				// Drop Column
 				if( isset( $col['Drop'] ) && $col['Drop'] ){
-					$sql .= " DROP `" .$col['Name'] . '`, ';
+					$sql .= " DROP " . $this->SafeEnclose( $col['Name'] ) . ', ';
 					
 					// Increment the Change Counter
 					$changeCounter++;
@@ -311,18 +296,10 @@ namespace DbRoller\Translators
 			$numOf = count($ukeys);
 			if( $numOf > 0 ){
 				foreach( $ukeys as $key ){
-					$sql .= ", ADD UNIQUE KEY `".$this->NameConstraint($tableName, $key,self::UQ)."` (`".$key."`) ";			
+					$sql .= ", ADD CONSTRAINT ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::UQ) )." UNIQUE(".$this->SafeEnclose( $key ) .") ";			
 				}
 			}
-			
-			// Add Keys
-			$numOf = count($keys);
-			if( $numOf > 0 ){
-				foreach( $keys as $key ){
-					$sql .= ", ADD KEY `".$this->NameConstraint($tableName, $key,self::UQ)."` (`".$key."`) ";			
-				}
-			}
-			
+
 			// Add Closure
 			$sql .= ";";
 			

@@ -4,6 +4,16 @@ namespace DbRoller\Translators
 	interface IDbTranslator
 	{
 		/**
+		* Safe Enclose.
+		* Enclose (wrap) Table or Column names to differenciate from Reserved words.
+		*
+		* @param string $value.
+		*
+		* @return string.
+		*/
+		public function SafeEnclose( $value );	
+		
+		/**
 		* Table Schema.
 		* Return a query for accessing the table's schema
 		*
@@ -12,6 +22,7 @@ namespace DbRoller\Translators
 		* @return string.
 		*/
 		public function TableSchema( $tableName );	
+		
 		/**
 		* Normalise Column Names.
 		* Normailse an array of column values into an array of column names.
@@ -26,24 +37,24 @@ namespace DbRoller\Translators
 		* Is Function
 		* Check to see if the string is a DB Function
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return null|string.
 		*/
-		public function IsFunction( $dbFunction, $dbVendor );
+		public function IsFunction( $dbKeyword, $dbVendor );
 		
 		
 		/**
 		* Translate.
 		* Load csv file containing the Database translation information.
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return string.
 		*/
-		public function Translate( $dbFunction, $dbVendor );
+		public function Translate( $dbKeyword, $dbVendor );
 
 		/**
 		* Write Column (SQL).

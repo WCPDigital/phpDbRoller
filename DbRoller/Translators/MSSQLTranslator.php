@@ -5,6 +5,20 @@ namespace DbRoller\Translators
 	
 	class MSSQLTranslator extends BaseTranslator implements IDbTranslator
 	{
+	
+		/**
+		* Safe Enclose.
+		* Enclose (wrap) Table or Column names to differenciate from Reserved words.
+		*
+		* @param string $value.
+		*
+		* @return string.
+		*/
+		public function SafeEnclose( $value ){
+			return '['.$value.']';
+
+		}		
+	
 		/**
 		* Table Exists.
 		* Return a query for accessing the table's schema
@@ -38,26 +52,26 @@ namespace DbRoller\Translators
 		* Is Function
 		* Check to see if the string is a DB Function
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return null|string.
 		*/
-		public function IsFunction( $dbFunction, $dbVendor = self::MSSQL ){
-			return parent::IsFunction( $dbFunction, $dbVendor );
+		public function IsFunction( $dbKeyword, $dbVendor = self::MSSQL ){
+			return parent::IsFunction( $dbKeyword, $dbVendor );
 		}
 		
 		/**
 		* Translate.
 		* Load csv file containing the Database translation information.
 		*
-		* @param string $dbFunction.
+		* @param string $dbKeyword.
 		* @param string $dbVendor.
 		*
 		* @return string.
 		*/
-		public function Translate( $dbFunction, $dbVendor = self::MSSQL ){
-			return parent::Translate( $dbFunction, $dbVendor );
+		public function Translate( $dbKeyword, $dbVendor = self::MSSQL ){
+			return parent::Translate( $dbKeyword, $dbVendor );
 		}
 
 		/**
@@ -74,16 +88,16 @@ namespace DbRoller\Translators
 				throw new Exception('Name and Type are required fields.');
 
 			// Add Name
-			$sql = " [".$args['Name']."] ";
+			$sql = " ".$this->SafeEnclose( $args['Name'] )." ";
 			
-			// Add Type
+			// Translate Type
 			$type = $this->Translate( $args['Type'] );
 			if( !empty( $type ) ){
-				$sql .= " [".$type."] ";
+				$args['Type'] = $type;
 			}
-			else{
-				$sql .= " [".$args['Type']."] ";
-			}
+
+			// Add Type
+			$sql .= " ".$args['Type']." ";
 			
 			// Add Type Length/Values
 			if( !empty( $args['LenVal'] ) ) 
@@ -131,13 +145,13 @@ namespace DbRoller\Translators
 		public function WriteInsert( $tableName, Array $cols, Array $params ){
 			
 			// Allow the table to have it's identities set
-			$sql = " SET IDENTITY_INSERT [dbo].[" . $tableName . "] ON; ";
+			//$sql = " SET IDENTITY_INSERT [dbo].[" . $tableName . "] ON; ";
 			
 			// Create the sql statement
-			$sql .= " INSERT INTO [dbo].[" . $tableName . "] (" . implode( ",", $cols ) . ") VALUES (" . implode( ",", $params ) . "); ";
+			$sql .= " INSERT INTO [dbo]." . $this->SafeEnclose( $tableName ) . " (" . implode( ",", array_map( array($this,'SafeEnclose'), $cols ) ) . ") VALUES (" . implode( ",", $params ) . "); ";
 		
 			// Reactivate identies
-			$sql .= " SET IDENTITY_INSERT [dbo].[" . $tableName . "] OFF; ";
+			//$sql .= " SET IDENTITY_INSERT [dbo].[" . $tableName . "] OFF; ";
 					
 			return $sql;
 		}
@@ -159,11 +173,11 @@ namespace DbRoller\Translators
 
 
 			// Add a Drop if Exists Query
-			$sql = " IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '". $tableName ."') DROP TABLE [". $tableName ."]; ";
+			$sql = " IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '". $tableName ."') DROP TABLE ". $this->SafeEnclose( $tableName ) ."; ";
 
 			// Start the Create Table Query
 			$sql .= " IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '". $tableName ."') " .
-					" CREATE TABLE [dbo].[". $tableName ."] (";
+					" CREATE TABLE [dbo].". $this->SafeEnclose( $tableName ) ." (";
 			
 			// Create Column SQL
 			$numOfCols = count( $cols );
@@ -183,9 +197,9 @@ namespace DbRoller\Translators
 			$numOf = count($pkeys);
 			if( $numOf > 0 ){
 				
-				$sql .= ", CONSTRAINT [".$this->NameConstraint($tableName, 'X', self::PK)."]  PRIMARY KEY ( ";
+				$sql .= ", CONSTRAINT ".$this->SafeEnclose( $this->NameConstraint($tableName, 'X', self::PK) )."  PRIMARY KEY ( ";
 				for( $i=0; $i<$numOf; $i++ ){
-					$sql .= " [".$pkeys[$i]."] ";
+					$sql .= " ".$this->SafeEnclose( $pkeys[$i] )." ";
 					
 					// Append Col Spacer (comma)
 					if( $i<($numOf-1) )
@@ -202,7 +216,7 @@ namespace DbRoller\Translators
 			$numOf = count($ukeys);
 			if( $numOf > 0 ){
 				foreach( $ukeys as $key ){
-					$sql .= " CREATE UNIQUE INDEX [".$this->NameConstraint($tableName, $key,self::UQ)."] ON [dbo].[".$tableName."]([".$key."]); ";			
+					$sql .= " CREATE UNIQUE INDEX ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::UQ) )." ON [dbo].".$this->SafeEnclose( $tableName)."(".$this->SafeEnclose( $key ) ."); ";			
 				}
 			}
 						
@@ -210,7 +224,7 @@ namespace DbRoller\Translators
 			$numOf = count($keys);
 			if( $numOf > 0 ){
 				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX [".$this->NameConstraint($tableName, $key,self::IDX)."] ON [dbo].[".$tableName."]([".$key."]); ";			
+					$sql .= " CREATE INDEX ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::IDX) )." ON [dbo].".$this->SafeEnclose( $tableName ) ."(".$this->SafeEnclose( $key ) ."); ";			
 				}
 			}
 			
@@ -249,7 +263,7 @@ namespace DbRoller\Translators
 					continue;
 				
 				// Add or Modify
-				$sql .= " ALTER TABLE [dbo].[". $tableName ."] ADD " . $this->WriteColumn( $col ) . "; ";
+				$sql .= " ALTER TABLE [dbo].". $this->SafeEnclose( $tableName ) ." ADD " . $this->WriteColumn( $col ) . "; ";
 				
 				// Increment the Change Counter
 				$changeCounter++;
@@ -259,7 +273,7 @@ namespace DbRoller\Translators
 			$numOf = count($ukeys);
 			if( $numOf > 0 ){
 				foreach( $ukeys as $key ){
-					$sql .= " CREATE UNIQUE INDEX [".$this->NameConstraint($tableName, $key,self::UQ)."] ON [dbo].[".$tableName."]([".$key."]); ";	
+					$sql .= " CREATE UNIQUE INDEX ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::UQ) )." ON [dbo].".$this->SafeEnclose( $tableName )."(".$this->SafeEnclose( $key ) ."); ";	
 				}
 			}
 			
@@ -267,7 +281,7 @@ namespace DbRoller\Translators
 			$numOf = count($keys);
 			if( $numOf > 0 ){
 				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX [".$this->NameConstraint($tableName, $key,self::IDX)."] ON [dbo].[".$tableName."]([".$key."]); ";		
+					$sql .= " CREATE INDEX ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::IDX) ) ." ON [dbo].".$this->SafeEnclose( $tableName ) ."(".$this->SafeEnclose( $key ) ."); ";		
 				}
 			}
 
