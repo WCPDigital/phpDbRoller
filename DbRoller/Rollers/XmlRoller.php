@@ -75,7 +75,7 @@ namespace DbRoller\Rollers
 				// Increment Table Counter
 				$i++;
 			}
-			
+
 			// Parse the JSON into SQL Table data
 			// Return the Build Script
 			return $this->build( $tables, $execute, $rebuild );

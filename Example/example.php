@@ -5,6 +5,7 @@ namespace{
 	require_once('../DbRoller/autoload.php');
 	
 	use \DbRoller\Translators\MySQLTranslator;
+	use \DbRoller\Translators\PGSQLTranslator;
 	use \DbRoller\Translators\MSSQLTranslator;
 	use \DbRoller\Translators\SQLiteTranslator;
 	use \DbRoller\Rollers\JsonRoller;
@@ -20,8 +21,11 @@ namespace{
 		// MySQL: Connect to DB and Execute
 		//$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 		
+		// PostGreSQL: Connect to DB and Execute
+		$db = new PDO('pgsql:host='.$host.';dbname='.$database.';', $username, $password );
+		
 		// MS SQL; Connect to DB and Execute
-		$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
+		//$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 
 		// SQLite; Connect to DB and Execute	
 		//$db = new PDO('sqlite:data/example.sqlite3');
@@ -40,8 +44,9 @@ namespace{
 	try{
 	
 	// Create a translator
-	//$trans = new MySQLTranslator();
-	$trans = new MSSQLTranslator();
+	$trans = new MySQLTranslator();
+	//$trans = new PGSQLTranslator();
+	//$trans = new MSSQLTranslator();
 	//$trans = new SQLiteTranslator();
 
 	

@@ -3,8 +3,17 @@ namespace DbRoller\Translators
 {
 	use \Exception;
 	
-	class MSSQLTranslator extends BaseTranslator implements IDbTranslator
+	class PGSQLTranslator extends BaseTranslator implements IDbTranslator
 	{
+		const PGSQL_ENGINE = 'MyISAM';
+		const PGSQL_CHARSET = 'utf8';
+		const PGSQL_COLLATION = 'utf8_general_ci';
+		const PGSQL_AUTOINCREMENT = 1;
+
+		const PGSQL_BINARY = 'BINARY';
+		const PGSQL_UNSIGNED = 'UNSIGNED';
+		const PGSQL_UNSIGNED_ZEROFILL = 'UNSIGNED ZEROFILL';
+	
 		/**
 		* Table Exists.
 		* Return a query for accessing the table's schema
@@ -43,7 +52,7 @@ namespace DbRoller\Translators
 		*
 		* @return null|string.
 		*/
-		public function IsFunction( $dbFunction, $dbVendor = self::MSSQL ){
+		public function IsFunction( $dbFunction, $dbVendor = self::PGSQL ){
 			return parent::IsFunction( $dbFunction, $dbVendor );
 		}
 		
@@ -56,10 +65,11 @@ namespace DbRoller\Translators
 		*
 		* @return string.
 		*/
-		public function Translate( $dbFunction, $dbVendor = self::MSSQL ){
+		public function Translate( $dbFunction, $dbVendor = self::PGSQL ){
 			return parent::Translate( $dbFunction, $dbVendor );
 		}
 
+		
 		/**
 		* Write Column (SQL).
 		*
@@ -74,35 +84,39 @@ namespace DbRoller\Translators
 				throw new Exception('Name and Type are required fields.');
 
 			// Add Name
-			$sql = " [".$args['Name']."] ";
+			$sql = " `".$args['Name']."` ";
 			
 			// Add Type
 			$type = $this->Translate( $args['Type'] );
 			if( !empty( $type ) ){
-				$sql .= " [".$type."] ";
+				$sql .= " ".$type." ";
 			}
 			else{
-				$sql .= " [".$args['Type']."] ";
+				$sql .= " ".$args['Type']." ";
 			}
 			
 			// Add Type Length/Values
 			if( !empty( $args['LenVal'] ) ) 
 				$sql .= " (".$args['LenVal'].") ";
-			
-			// Add Auto Increment
-			if( $args['AutoIncrement'] ) 
-				$sql .= " IDENTITY(1,1) ";		
+
+			// Add Attribute
+			if( !empty( $args['Attribute'] ) ){
+				
+				// If not a Special Function, wrap in single quotes
+				$args['Attribute'] = strtoupper($args['Attribute']);
+				if( in_array( $args['Attribute'], array( self::PGSQL_BINARY, self::PGSQL_UNSIGNED, self::PGSQL_UNSIGNED_ZEROFILL ) ) )
+					$sql .= " ".$args['Attribute']." ";
+			}
 			
 			// Allow Nulls
-			// Note: Identity doesn't allow NULLs
-			if( $args['AllowNull'] && !$args['AutoIncrement'] && !$args['IsKey'] )
+			if( $args['AllowNull'] && !$args['AutoIncrement'] )
 				$sql .= " NULL ";
 			else
 				$sql .= " NOT NULL ";
 		
 			// Add Default
-			// Note: Disregard Defaults for Autoincrement and Indices
-			if( !empty( $args['Default'] ) && !$args['AutoIncrement'] && !$args['IsKey'] ){
+			// Note: Disregard Defaults for Autoincrement
+			if( !empty( $args['Default'] ) && !$args['AutoIncrement'] ){
 				
 				// Translate the Default
 				$default = $this->Translate( $args['Default'] );
@@ -115,6 +129,14 @@ namespace DbRoller\Translators
 						$sql .= " DEFAULT '".$args['Default']."' ";
 				}
 			}
+			
+			// Add Auto Increment
+			if( $args['AutoIncrement'] ) 
+				$sql .= " AUTO_INCREMENT ";		
+
+			// Add Comment
+			if( !empty( $args['Comment'] ) ) 
+				$sql .= " COMMENT '".$args['Comment']."' ";
 
 			return $sql;
 		}
@@ -129,17 +151,7 @@ namespace DbRoller\Translators
 		* @return string.
 		*/		
 		public function WriteInsert( $tableName, Array $cols, Array $params ){
-			
-			// Allow the table to have it's identities set
-			$sql = " SET IDENTITY_INSERT [dbo].[" . $tableName . "] ON; ";
-			
-			// Create the sql statement
-			$sql .= " INSERT INTO [dbo].[" . $tableName . "] (" . implode( ",", $cols ) . ") VALUES (" . implode( ",", $params ) . "); ";
-		
-			// Reactivate identies
-			$sql .= " SET IDENTITY_INSERT [dbo].[" . $tableName . "] OFF; ";
-					
-			return $sql;
+			return " INSERT INTO `" . $tableName . "` (" . implode( ",", $cols ) . ") VALUES (" . implode( ",", $params ) . "); ";
 		}
 		
 		/**
@@ -157,19 +169,17 @@ namespace DbRoller\Translators
 		*/		
 		public function Create( $tableName, Array $cols, Array $pkeys, Array $ukeys, Array $keys, Array $args = null    ){
 
-
 			// Add a Drop if Exists Query
-			$sql = " IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '". $tableName ."') DROP TABLE [". $tableName ."]; ";
-
+			$sql = " DROP TABLE IF EXISTS `". $tableName ."`; ";
+			
 			// Start the Create Table Query
-			$sql .= " IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '". $tableName ."') " .
-					" CREATE TABLE [dbo].[". $tableName ."] (";
+			$sql .= " CREATE TABLE IF NOT EXISTS `". $tableName ."` (";
 			
 			// Create Column SQL
 			$numOfCols = count( $cols );
 			for( $i=0; $i<$numOfCols; $i++ ){
 				$col = $cols[$i];
-
+				
 				// Build the Column SQL
 				$sql .= $this->WriteColumn( $col );
 				
@@ -183,9 +193,9 @@ namespace DbRoller\Translators
 			$numOf = count($pkeys);
 			if( $numOf > 0 ){
 				
-				$sql .= ", CONSTRAINT [".$this->NameConstraint($tableName, 'X', self::PK)."]  PRIMARY KEY ( ";
+				$sql .= ", PRIMARY KEY `".$this->NameConstraint($tableName, 'X', self::PK)."` ( ";
 				for( $i=0; $i<$numOf; $i++ ){
-					$sql .= " [".$pkeys[$i]."] ";
+					$sql .= " `".$pkeys[$i]."` ";
 					
 					// Append Col Spacer (comma)
 					if( $i<($numOf-1) )
@@ -194,25 +204,53 @@ namespace DbRoller\Translators
 				$sql .= " ) ";
 			}
 			
-			// Complete the Table Create SQL
-			$sql .= " ); ";
-			
-						
 			// Add Unique Keys
 			$numOf = count($ukeys);
 			if( $numOf > 0 ){
 				foreach( $ukeys as $key ){
-					$sql .= " CREATE UNIQUE INDEX [".$this->NameConstraint($tableName, $key,self::UQ)."] ON [dbo].[".$tableName."]([".$key."]); ";			
+					$sql .= ", UNIQUE KEY `".$this->NameConstraint($tableName, $key,self::UQ)."` (`".$key."`) ";			
 				}
-			}
-						
-			// Add Index/Key
+			}	
+			
+			// Add Keys/Indices
 			$numOf = count($keys);
 			if( $numOf > 0 ){
 				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX [".$this->NameConstraint($tableName, $key,self::IDX)."] ON [dbo].[".$tableName."]([".$key."]); ";			
+					$sql .= ", KEY `".$this->NameConstraint($tableName, $key,self::IDX)."` (`".$key."`) ";			
 				}
 			}
+			
+			// Complete the Table Create SQL
+			$sql .= " ) ";
+			
+			// Add engine
+			if( !empty( $args['Engine'] ) )
+				$sql .= " ENGINE='".$args['Engine']."' ";
+			else
+				$sql .= " ENGINE='".self::PGSQL_ENGINE."' ";
+			
+			
+			// Add CharSet
+			if( !empty($args['CharSet']) )
+				$sql .= " DEFAULT CHARSET='".$args['CharSet']."' ";
+			else
+				$sql .= " DEFAULT CHARSET='".self::PGSQL_CHARSET."' ";
+			
+			
+			// Add Collation
+			if( !empty($args['Collation']) )
+				$sql .= " COLLATE='".$args['Collation']."' ";
+			else
+				$sql .= " COLLATE='".self::PGSQL_COLLATION."' ";
+			
+			
+			// Add Auto Increment
+			if( !empty( $args['AutoIncrement'] ) ){
+				$sql .= " AUTO_INCREMENT=".intval( $args['AutoIncrement'] );
+			}
+
+			// Add Closure
+			$sql .= ";";
 			
 			// Finsihed SQL
 			return $sql;
@@ -235,31 +273,45 @@ namespace DbRoller\Translators
 			// No point executing a query if there are no changes
 			// So we'll count them
 			$changeCounter = 0;
-				
+			
 			// Create the Alter Table SQL
-			$sql = '';
+			$sql = " ALTER TABLE `". $tableName ."` ";
 			
 			// Loop Columns and Add or Drop
 			$numOfCols = count( $cols );
 			for( $i=0; $i<$numOfCols; $i++ ){
 				$col = $cols[$i];
 				
-				// Drop and Alter/Modify is not supported
-				if( $col['Exists'] || (isset( $col['Drop'] ) && $col['Drop']) )
-					continue;
+				// Drop Column
+				if( isset( $col['Drop'] ) && $col['Drop'] ){
+					$sql .= " DROP `" .$col['Name'] . '`, ';
+					
+					// Increment the Change Counter
+					$changeCounter++;
+				}
 				
-				// Add or Modify
-				$sql .= " ALTER TABLE [dbo].[". $tableName ."] ADD " . $this->WriteColumn( $col ) . "; ";
+				// Add Column
+				else if( !$col['Exists'] ){
 				
-				// Increment the Change Counter
-				$changeCounter++;
+					// Add or Modify
+					$sql .=  " ADD ";
+						
+					// Build the Column SQL
+					$sql .= $this->WriteColumn( $col ) . ', ';
+					
+					// Increment the Change Counter
+					$changeCounter++;
+				}
 			}
+			
+			// Remove the trailing comma
+			$sql = substr(trim($sql), 0, -1);
 
 			// Add Unique Keys
 			$numOf = count($ukeys);
 			if( $numOf > 0 ){
 				foreach( $ukeys as $key ){
-					$sql .= " CREATE UNIQUE INDEX [".$this->NameConstraint($tableName, $key,self::UQ)."] ON [dbo].[".$tableName."]([".$key."]); ";	
+					$sql .= ", ADD UNIQUE KEY `".$this->NameConstraint($tableName, $key,self::UQ)."` (`".$key."`) ";			
 				}
 			}
 			
@@ -267,10 +319,13 @@ namespace DbRoller\Translators
 			$numOf = count($keys);
 			if( $numOf > 0 ){
 				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX [".$this->NameConstraint($tableName, $key,self::IDX)."] ON [dbo].[".$tableName."]([".$key."]); ";		
+					$sql .= ", ADD KEY `".$this->NameConstraint($tableName, $key,self::UQ)."` (`".$key."`) ";			
 				}
 			}
-
+			
+			// Add Closure
+			$sql .= ";";
+			
 			// Finsihed SQL
 			if( $changeCounter > 0 )
 				return $sql;

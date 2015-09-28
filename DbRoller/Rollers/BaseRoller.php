@@ -297,7 +297,7 @@ namespace DbRoller\Rollers
 						'Collation'=>$tableCollation,
 						'AutoIncrement'=>$tableAutoIncrement
 					) );
-
+					
 					// Create the Table
 					// Note: If the SQL is empty, then there are no changes
 					if( $execute && !empty( $sql ) ){

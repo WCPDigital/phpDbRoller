@@ -109,7 +109,7 @@ namespace DbRoller\Translators
 			}
 			
 			// Allow Nulls
-			if( $args['AllowNull'] && !$args['AutoIncrement'] && !$args['IsKey'] )
+			if( $args['AllowNull'] && !$args['AutoIncrement'] )
 				$sql .= " NULL ";
 			else
 				$sql .= " NOT NULL ";
