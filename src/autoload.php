@@ -11,8 +11,8 @@
 */
 function dbRollerAutoload( $className )
 {
-	// If we're not loading a DbRoller class, exit this function
-	if( strpos( $className, 'DbRoller\\') !== 0 )
+	// If we're not loading a class from this package, exit this function
+	if( strpos( $className, 'WCPDigital\\DbRoller\\') !== 0 )
 		return;
 	
 	$className = str_replace('\\' , DIRECTORY_SEPARATOR, $className);

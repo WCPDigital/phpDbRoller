@@ -3,13 +3,13 @@ namespace{
 	
 	require_once('../src/autoload.php');
 	
-	use \DbRoller\Translators\MySQLTranslator;
-	use \DbRoller\Translators\PGSQLTranslator;
-	use \DbRoller\Translators\MSSQLTranslator;
-	use \DbRoller\Translators\SQLiteTranslator;
-	use \DbRoller\Rollers\JsonRoller;
-	use \DbRoller\Rollers\XmlRoller;
-	use \DbRoller\Rollers\YamlRoller;
+	use WCPDigital\DbRoller\Translators\MySQLTranslator;
+	use WCPDigital\DbRoller\Translators\PGSQLTranslator;
+	use WCPDigital\DbRoller\Translators\MSSQLTranslator;
+	use WCPDigital\DbRoller\Translators\SQLiteTranslator;
+	use WCPDigital\DbRoller\Rollers\JsonRoller;
+	use WCPDigital\DbRoller\Rollers\XmlRoller;
+	use WCPDigital\DbRoller\Rollers\YamlRoller;
 	
 	try{
 		$host = 'localhost';
@@ -18,7 +18,7 @@ namespace{
 		$password = '';
 		
 		// MySQL: Connect to DB and Execute
-		$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
+		//$db = new PDO('mysql:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 		
 		// PostGreSQL: Connect to DB and Execute
 		//$db = new PDO('pgsql:host='.$host.';dbname='.$database.';', $username, $password );
@@ -27,7 +27,7 @@ namespace{
 		//$db = new PDO('dblib:host='.$host.';dbname='.$database.';charset=utf8', $username, $password );
 
 		// SQLite; Connect to DB and Execute	
-		//$db = new PDO('sqlite:data/example.sqlite3');
+		$db = new PDO('sqlite:data/example.sqlite3');
 		
 		// Set error mode
 		$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -43,10 +43,10 @@ namespace{
 	try{
 	
 	// Create a translator
-	$trans = new MySQLTranslator();
+	//$trans = new MySQLTranslator();
 	//$trans = new PGSQLTranslator();
 	//$trans = new MSSQLTranslator();
-	//$trans = new SQLiteTranslator();
+	$trans = new SQLiteTranslator();
 
 	
 	// JSON

@@ -3,7 +3,7 @@ namespace WCPDigital\DbRoller\Rollers
 {
 	use \PDO;
 	use \Exception;
-	use \DbRoller\Translators\IDbTranslator;
+	use \WCPDigital\DbRoller\Translators\IDbTranslator;
 	
 	/**
 	* Baser DB Roller
