@@ -1,5 +1,5 @@
 <?php
-namespace DbRoller\Rollers
+namespace WCPDigital\DbRoller\Rollers
 {
 	interface IDbRoller
 	{

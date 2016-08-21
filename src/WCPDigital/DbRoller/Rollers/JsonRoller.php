@@ -1,10 +1,10 @@
 <?php
-namespace DbRoller\Rollers
+namespace WCPDigital\DbRoller\Rollers
 {
 	use \Exception;
 	
 	/**
-	* YAML DB Roller
+	* JSON DB Roller
 	* A utility for converting a JSON Object into SQL.
 	*
 	* @package DB Roller
@@ -14,7 +14,7 @@ namespace DbRoller\Rollers
 	* @link http://www.wcpdigital.com.au
 	* @version 1.0.0 <15/09/2015>
 	*/
-	class YamlRoller extends BaseRoller implements IDbRoller
+	class JsonRoller extends BaseRoller implements IDbRoller
 	{
 		/**
 		* Build From File.
@@ -31,10 +31,14 @@ namespace DbRoller\Rollers
 				throw new Exception('DB Roller: File not readable: '.$filePath );
 			
 			// Get the File Contents
-			$tables = \yaml_parse_file( $filePath );
-			if( empty( $tables ) )	
+			$dataString = file_get_contents( $filePath );
+			if( empty( $dataString ) )	
 				throw new Exception('DB Roller: File was empty or failed to load: '.$filePath );
 			
+			// Parse the JSON
+			$tables = json_decode( utf8_encode( trim( $dataString ) ), true, 1024 );
+			if( json_last_error() != JSON_ERROR_NONE )
+				throw new Exception('DB Roller: JSON failed to decode: '.$filePath );
 			
 			// Parse the JSON into SQL Table data
 			// Return the Build Script

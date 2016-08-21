@@ -1,5 +1,5 @@
 <?php
-namespace DbRoller\Translators
+namespace WCPDigital\DbRoller\Translators
 {
 	interface IDbTranslator
 	{

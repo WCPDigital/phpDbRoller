@@ -1,10 +1,19 @@
 <?php
-namespace DbRoller\Translators
+namespace WCPDigital\DbRoller\Translators
 {
 	use \Exception;
 	
-	class SQLiteTranslator extends BaseTranslator implements IDbTranslator
+	class PGSQLTranslator extends BaseTranslator implements IDbTranslator
 	{
+		const PGSQL_ENGINE = 'MyISAM';
+		const PGSQL_CHARSET = 'utf8';
+		const PGSQL_COLLATION = 'utf8_general_ci';
+		const PGSQL_AUTOINCREMENT = 1;
+
+		const PGSQL_SERIAL = 'SERIAL';
+		const PGSQL_BIGSERIAL = 'BIGSERIAL';
+	
+	
 		/**
 		* Safe Enclose.
 		* Enclose (wrap) Table or Column names to differenciate from Reserved words.
@@ -14,12 +23,12 @@ namespace DbRoller\Translators
 		* @return string.
 		*/
 		public function SafeEnclose( $value ){
-			return '`'.$value.'`';
+			return '"'.$value.'"';
 
 		}		
 	
 		/**
-		* Table Schema.
+		* Table Exists.
 		* Return a query for accessing the table's schema
 		*
 		* @param string $tableName.
@@ -27,7 +36,7 @@ namespace DbRoller\Translators
 		* @return string.
 		*/
 		public function TableSchema( $tableName ){
-			return " PRAGMA table_info('".$tableName."'); ";
+			return " SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '".$tableName."'; ";
 		}	
 		
 		/**
@@ -42,11 +51,10 @@ namespace DbRoller\Translators
 				
 			$columnNames = array();
 			foreach( $tableSchema as $row ){
-				$columnNames[] = $row['name'];
+				$columnNames[] = $row['COLUMN_NAME'];
 			}
 			return $columnNames;
 		}
-		
 
 		/**
 		* Is Function
@@ -57,9 +65,9 @@ namespace DbRoller\Translators
 		*
 		* @return null|string.
 		*/
-		public function IsFunction( $dbKeyword, $dbVendor = self::SQLITE ){
+		public function IsFunction( $dbKeyword, $dbVendor = self::PGSQL ){
 			return parent::IsFunction( $dbKeyword, $dbVendor );
-		}		
+		}
 		
 		/**
 		* Translate.
@@ -70,7 +78,7 @@ namespace DbRoller\Translators
 		*
 		* @return string.
 		*/
-		public function Translate( $dbKeyword, $dbVendor = self::SQLITE ){
+		public function Translate( $dbKeyword, $dbVendor = self::PGSQL ){
 			return parent::Translate( $dbKeyword, $dbVendor );
 		}
 
@@ -80,7 +88,7 @@ namespace DbRoller\Translators
 		*
 		* @param array $args.
 		*
-		* @return string.
+		* @return null|string.
 		*/		
 		public function WriteColumn( Array $args ){
 
@@ -91,33 +99,43 @@ namespace DbRoller\Translators
 			// Add Name
 			$sql = " ".$this->SafeEnclose( $args['Name'] )." ";
 			
-			// Translate Type
-			$type = $this->Translate( $args['Type'] );
-			if( !empty( $type ) ){
-				$args['Type'] = $type;
+			
+			// PostGres AutoIncrement is handled by the Serial Datatype
+			// Convert INT and BIGINT to SERIAL and BIGSERIAL when flagged as AutoIncrement
+			$args['Type'] = strtoupper($args['Type']);
+			if( $args['AutoIncrement'] ){
+				switch( $args['Type'] ){
+					case 'INT':
+						$args['Type'] = self::PGSQL_SERIAL;
+						break;
+						
+					case 'BIGINT':
+					default:
+						$args['Type'] = self::PGSQL_BIGSERIAL;
+						break;
+				}
 			}
-
+			 
+			// Ensure the autoincrement flag is set
+			$args['AutoIncrement'] = ( $args['Type'] == self::PGSQL_SERIAL || $args['Type'] == self::PGSQL_BIGSERIAL );
+			
+			// If not AutoIncrement, Translate Type
+			if( !$args['AutoIncrement'] ){
+				$type = $this->Translate( $args['Type'] );
+				if( !empty( $type ) ){
+					$args['Type'] = $type;
+				}
+			}
+			
 			// Add Type
 			$sql .= " ".$args['Type']." ";
 			
 			// Add Type Length/Values
-			if( !empty( $args['Index'] ) ) {
-				switch( strtoupper( $args['Index'] ) ){
-					
-					case self::SQLITE_UNIQUE_KEY;
-						$sql .= " UNIQUE ";
-						break;
-				}
-			}
-			
-			// Add Auto Increment
-			// In SQLite this is automatically added to every column using the ROWID
-			//if( $args['AutoIncrement'] ) 
-				//$sql .= " AUTOINCREMENT ";		
+			if( !empty( $args['LenVal'] ) ) 
+				$sql .= " (".$args['LenVal'].") ";
 
 			// Allow Nulls
-			// In SQLite Autoincrement Columns must be NULL
-			if( $args['AllowNull'] || $args['AutoIncrement'] )
+			if( $args['AllowNull'] && !$args['AutoIncrement'] )
 				$sql .= " NULL ";
 			else
 				$sql .= " NOT NULL ";
@@ -138,6 +156,10 @@ namespace DbRoller\Translators
 				}
 			}
 
+			// Add Comment
+			//if( !empty( $args['Comment'] ) ) 
+				//$sql .= " COMMENT '".$args['Comment']."' ";
+
 			return $sql;
 		}
 		
@@ -148,7 +170,7 @@ namespace DbRoller\Translators
 		* @param array $cols.
 		* @param array $params.
 		*
-		* @return null|string.
+		* @return string.
 		*/		
 		public function WriteInsert( $tableName, Array $cols, Array $params ){
 			return " INSERT INTO " . $this->SafeEnclose( $tableName ) . " (" . implode( ",", array_map( array($this,'SafeEnclose'), $cols ) ) . ") VALUES (" . implode( ",", $params ) . "); ";
@@ -173,7 +195,7 @@ namespace DbRoller\Translators
 			$sql = " DROP TABLE IF EXISTS ". $this->SafeEnclose( $tableName ) ."; ";
 			
 			// Start the Create Table Query
-			$sql .= " CREATE TABLE IF NOT EXISTS ". $this->SafeEnclose( $tableName ) ." (";
+			$sql .= " CREATE TABLE ". $this->SafeEnclose( $tableName ) ." (";
 			
 			// Create Column SQL
 			$numOfCols = count( $cols );
@@ -187,15 +209,15 @@ namespace DbRoller\Translators
 				if( $i<($numOfCols-1) )
 					$sql .= ",";
 			}
-			
+
 			// Add Primary Keys
 			// Only add Primary Keys on Table Creation
 			$numOf = count($pkeys);
 			if( $numOf > 0 ){
 				
-				$sql .= ", CONSTRAINT ". $this->SafeEnclose(  $this->NameConstraint($tableName, 'X', self::PK) ) ." PRIMARY KEY  ( ";
+				$sql .= ", CONSTRAINT  ". $this->SafeEnclose( $this->NameConstraint($tableName, 'X', self::PK) ) ." PRIMARY KEY ( ";
 				for( $i=0; $i<$numOf; $i++ ){
-					$sql .= "`".$pkeys[$i]."`";
+					$sql .= " ". $this->SafeEnclose( $pkeys[$i] ) ." ";
 					
 					// Append Col Spacer (comma)
 					if( $i<($numOf-1) )
@@ -204,17 +226,17 @@ namespace DbRoller\Translators
 				$sql .= " ) ";
 			}
 			
-			// Complete the Table
-			$sql .= " ); ";
-			
-			// Add Index/Key
-			$numOf = count($keys);
+			// Add Unique Keys
+			$numOf = count($ukeys);
 			if( $numOf > 0 ){
-				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::IDX) )." ON ".$this->SafeEnclose( $tableName ) ." (".$this->SafeEnclose( $key )." ); ";			
+				foreach( $ukeys as $key ){
+					$sql .= ", CONSTRAINT ". $this->SafeEnclose( $this->NameConstraint($tableName, $key,self::UQ) ) ." UNIQUE (".$this->SafeEnclose( $key ) .") ";			
 				}
-			}
+			}	
 			
+			// Complete the Table Create SQL
+			$sql .= " ); ";
+
 			// Finsihed SQL
 			return $sql;
 		}
@@ -236,40 +258,51 @@ namespace DbRoller\Translators
 			// No point executing a query if there are no changes
 			// So we'll count them
 			$changeCounter = 0;
-				
+			
 			// Create the Alter Table SQL
-			$sql = '';
+			$sql = " ALTER TABLE ". $this->SafeEnclose( $tableName ) ." ";
 			
 			// Loop Columns and Add or Drop
 			$numOfCols = count( $cols );
 			for( $i=0; $i<$numOfCols; $i++ ){
 				$col = $cols[$i];
 				
-				// Drop and Alter/Modify is not supported
-				if( $col['Exists'] || (isset( $col['Drop'] ) && $col['Drop']) )
-					continue;
+				// Drop Column
+				if( isset( $col['Drop'] ) && $col['Drop'] ){
+					$sql .= " DROP " . $this->SafeEnclose( $col['Name'] ) . ', ';
+					
+					// Increment the Change Counter
+					$changeCounter++;
+				}
 				
-				// Add or Modify
-				$sql .= " ALTER TABLE ". $this->SafeEnclose( $tableName ) ." ADD " . $this->WriteColumn( $col ) . "; ";
-
-				// Increment the Change Counter
-				$changeCounter++;
+				// Add Column
+				else if( !$col['Exists'] ){
+				
+					// Add or Modify
+					$sql .=  " ADD ";
+						
+					// Build the Column SQL
+					$sql .= $this->WriteColumn( $col ) . ', ';
+					
+					// Increment the Change Counter
+					$changeCounter++;
+				}
 			}
 			
 			// Remove the trailing comma
 			$sql = substr(trim($sql), 0, -1);
 
-			// Add Closure
-			$sql .= ";";
-					
-			// Add Index/Key
-			$numOf = count($keys);
+			// Add Unique Keys
+			$numOf = count($ukeys);
 			if( $numOf > 0 ){
-				foreach( $keys as $key ){
-					$sql .= " CREATE INDEX ". $this->SafeEnclose( $this->NameConstraint($tableName, $key,self::IDX) )." ON ". $this->SafeEnclose( $tableName ). " ( ".$this->SafeEnclose( $key ) ." ); ";			
+				foreach( $ukeys as $key ){
+					$sql .= ", ADD CONSTRAINT ".$this->SafeEnclose( $this->NameConstraint($tableName, $key,self::UQ) )." UNIQUE(".$this->SafeEnclose( $key ) .") ";			
 				}
 			}
 
+			// Add Closure
+			$sql .= ";";
+			
 			// Finsihed SQL
 			if( $changeCounter > 0 )
 				return $sql;

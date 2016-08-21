@@ -1,8 +1,7 @@
 <?php
 namespace{
 	
-	//require_once('../DbRoller/bootstrap.php');
-	require_once('../DbRoller/autoload.php');
+	require_once('../src/autoload.php');
 	
 	use \DbRoller\Translators\MySQLTranslator;
 	use \DbRoller\Translators\PGSQLTranslator;
